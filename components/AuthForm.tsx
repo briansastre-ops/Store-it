@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
+
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -17,6 +18,8 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 
+import { createAccount, signInUser } from "@/lib/actions/user.action";
+
 type FormType = "sign-in" | "sign-up";
 
 const authFormSchema = (formType: FormType) => {
@@ -29,9 +32,20 @@ const authFormSchema = (formType: FormType) => {
   });
 };
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const OtpModal = ({ accountId, email }: { accountId: string; email: string }) => {
+  return (
+    <div>
+      {/* Your modal implementation */}
+      <p>OTP Modal for {email}</p>
+    </div>
+  );
+};
+
 const AuthForm = ({ type }: { type: FormType }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [accountId, setAccountId] = useState(null);
 
   const formSchema = authFormSchema(type);
   const form = useForm<z.infer<typeof formSchema>>({
@@ -47,8 +61,15 @@ const AuthForm = ({ type }: { type: FormType }) => {
     setErrorMessage("");
 
     try {
-      // Logic for creating or signing in a user goes here
-      // (Removed createAccount and signInUser logic)
+      const user =
+        type === "sign-up"
+          ? await createAccount({
+              fullName: values.fullName || "",
+              email: values.email,
+            })
+          : await signInUser({ email: values.email });
+
+      setAccountId(user.accountId);
     } catch {
       setErrorMessage("Failed to create account. Please try again.");
     } finally {
@@ -145,6 +166,10 @@ const AuthForm = ({ type }: { type: FormType }) => {
           </div>
         </form>
       </Form>
+
+      {accountId && (
+        <OtpModal email={form.getValues("email")} accountId={accountId} />
+      )}
     </>
   );
 };
